@@ -19,8 +19,6 @@ def read_requirements():
 setup(
     name="scrapington",
     version="1.0.0",
-    author="Scrapington Team",
-    author_email="contact@scrapington.dev",
     description="Universal GeoJSON scraper for ArcGIS Feature Services",
     long_description=read_readme(),
     long_description_content_type="text/markdown",
