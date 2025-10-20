@@ -1,0 +1,16 @@
+{
+  "url": "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Counties_Generalized/FeatureServer/0/query",
+  "output_file": "usa_counties.geojson",
+  "output_dir": "geojson_export",
+  "where_clause": "1=1",
+  "out_fields": "*",
+  "spatial_reference": 4326,
+  "max_records": 1000,
+  "batch_size": 1000,
+  "timeout": 60,
+  "retry_attempts": 3,
+  "retry_delay": 1.0,
+  "validate_geometry": true,
+  "normalize_attributes": true,
+  "verbose": true
+}

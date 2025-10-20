@@ -1,138 +1,237 @@
-## Scrapington
+# 🗺️ Scrapington
 
-A tiny, script-first workspace for extracting geospatial layers (GeoJSON) from public map sources.
+**Universal GeoJSON Scraper for ArcGIS Feature Services**
 
-### What’s here
-- **Scripts**: Small Python scripts like `extract_arcgis_geojson.py`, `extract_nlcog_map.py`, `extract_school_districts.py`.
-- **Exports**: GeoJSON files under `geojson_export/`.
+A production-ready toolkit for extracting geospatial data from any ArcGIS Feature Service with just a URL. Perfect for data scientists, GIS professionals, and developers who need reliable, scalable data extraction.
 
-### Quick start
-1. **Install Python 3.10+**
-2. **Create a virtual environment**
-   - macOS/Linux:
+## ✨ Features
+
+- **🎯 Universal**: Works with any ArcGIS Feature Service URL
+- **⚡ Production Ready**: Handles pagination, retries, and error recovery
+- **🔧 Configurable**: JSON config files or command-line options
+- **📊 Data Quality**: Automatic geometry validation and attribute normalization
+- **🚀 Easy Deploy**: One-command deployment to GitHub
+- **📦 Packaged**: Proper Python package with dependencies
+
+## 🚀 Quick Start
+
+### 1. Clone and Setup
 ```bash
+git clone https://github.com/jjkssf1/scrapington.git
+cd scrapington
 python3 -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install -r requirements.txt
 ```
-   - Windows (PowerShell):
+
+### 2. Basic Usage - Just Paste a URL!
 ```bash
-py -m venv .venv
-.venv\Scripts\Activate.ps1
+# Extract data from any ArcGIS service
+python universal_scraper.py --url "https://services.arcgis.com/..." --output "my_data.geojson"
+
+# Or use the packaged command
+scrapington --url "https://services.arcgis.com/..." --output "my_data.geojson"
 ```
-3. **Install common dependencies** (if your script needs them):
+
+### 3. Advanced Usage with Configuration
 ```bash
-pip install requests shapely pyproj pandas tqdm
+# Create a sample config
+python universal_scraper.py --create-config my_config.json
+
+# Edit the config file with your URL and settings
+# Then run with config
+python universal_scraper.py --config my_config.json
 ```
-4. **Run a script**:
+
+### 4. Deploy Your Changes
 ```bash
-python extract_school_districts.py
-```
-5. **Find outputs** in `geojson_export/`.
-
-### Conventions for new scraper scripts
-- **One job per file**: Each script should do one clear extraction task end-to-end.
-- **Deterministic outputs**: Write results to `geojson_export/` using stable filenames.
-- **Log plainly**: Print high-signal messages; avoid noisy logs.
-- **Fail clearly**: Raise with context (HTTP code, layer ids, URLs) so issues are debuggable.
-- **Small, pure helpers**: Separate network fetch, transform, and write steps into small functions.
-- **No secrets in code**: Read tokens/keys from environment variables when needed.
-
-### Recommended file layout
-- `extract_<source>_<layer>.py` — single-purpose scraper
-- `geojson_export/` — final GeoJSON outputs
-
-### Minimal script template
-Use this as a starting point for new scrapers.
-```python
-#!/usr/bin/env python3
-import json
-import os
-from dataclasses import dataclass
-from typing import Any, Dict, List
-
-import requests
-
-
-@dataclass
-class ExportConfig:
-    output_dir: str = "geojson_export"
-    output_file: str = "example.geojson"
-
-    @property
-    def output_path(self) -> str:
-        os.makedirs(self.output_dir, exist_ok=True)
-        return os.path.join(self.output_dir, self.output_file)
-
-
-def fetch_json(url: str, params: Dict[str, Any] | None = None, headers: Dict[str, str] | None = None) -> Dict[str, Any]:
-    response = requests.get(url, params=params, headers=headers, timeout=60)
-    response.raise_for_status()
-    return response.json()
-
-
-def to_feature_collection(features: List[Dict[str, Any]]) -> Dict[str, Any]:
-    return {"type": "FeatureCollection", "features": features}
-
-
-def write_geojson(path: str, data: Dict[str, Any]) -> None:
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
-
-def main() -> None:
-    cfg = ExportConfig()
-
-    # Example: ArcGIS FeatureServer query endpoint (replace with your own)
-    url = "https://services.arcgis.com/<org>/arcgis/rest/services/<layer>/FeatureServer/0/query"
-    params = {
-        "where": "1=1",
-        "outFields": "*",
-        "f": "geojson",
-        "outSR": 4326,
-    }
-
-    print("Fetching features…")
-    data = fetch_json(url, params=params)
-
-    # If your endpoint already returns valid GeoJSON FeatureCollection, you can write directly.
-    # Otherwise, transform to GeoJSON here.
-    if data.get("type") != "FeatureCollection":
-        data = to_feature_collection(data.get("features", []))
-
-    print(f"Writing {cfg.output_path}")
-    write_geojson(cfg.output_path, data)
-    print("Done.")
-
-
-if __name__ == "__main__":
-    main()
+# Automatically commit and push to scrapington.git
+python deploy.py
 ```
 
-### ArcGIS/FeatureServer tips
-- **Prefer `f=geojson`** when available. If only `f=json` is supported, you’ll need to map Esri JSON to GeoJSON.
-- **Paginate** large layers using `resultOffset`/`resultRecordCount`, or `where` filtering.
-- **Spatial reference**: Request `outSR=4326` for WGS84 when possible.
-- **Attributes**: Use `outFields=*` or specify exactly what you need for smaller payloads.
+## 📁 What's Included
 
-### Data quality and transforms
-- Validate geometry types and fix invalid polygons if needed (e.g., via Shapely `buffer(0)`).
-- Normalize attribute names and values — keep them lowercase, snake_case, and consistent.
-- Keep CRS as WGS84 (EPSG:4326) for GeoJSON outputs.
+- **`universal_scraper.py`** - Main scraper script (production-ready)
+- **`config.json`** - Sample configuration file
+- **`deploy.py`** - One-command deployment script
+- **`requirements.txt`** - All dependencies
+- **`setup.py`** - Python package configuration
+- **`geojson_export/`** - Output directory for scraped data
+- **Legacy scripts** - `extract_*.py` for reference
 
-### Testing locally
+## 🎯 Universal Scraper Usage
+
+### Command Line Options
 ```bash
-python -m pip install pytest
-pytest -q
+python universal_scraper.py --help
 ```
 
-### Adding a new script: checklist
-- Script name is clear and specific
-- Prints concise progress messages
-- Handles HTTP failures and empty results
-- Writes to `geojson_export/<your_file>.geojson`
-- Leaves no temp files in the repo
+**Basic Options:**
+- `--url` - ArcGIS Feature Service URL (required)
+- `--output` - Output filename (default: scraped_data.geojson)
+- `--config` - Use configuration file instead of command line
 
-### Contributing
-Open a PR adding your new script and exported GeoJSON file(s). Keep diffs small and focused.
+**Advanced Options:**
+- `--where` - WHERE clause for filtering (default: 1=1)
+- `--fields` - Fields to retrieve (default: *)
+- `--max-records` - Maximum records to fetch
+- `--batch-size` - Batch size for requests (default: 1000)
+- `--timeout` - Request timeout in seconds (default: 60)
+- `--no-validate` - Skip geometry validation
+- `--no-normalize` - Skip attribute normalization
+- `--quiet` - Suppress output messages
+
+### Configuration File Format
+```json
+{
+  "url": "https://services.arcgis.com/.../FeatureServer/0/query",
+  "output_file": "my_data.geojson",
+  "output_dir": "geojson_export",
+  "where_clause": "1=1",
+  "out_fields": "*",
+  "spatial_reference": 4326,
+  "max_records": 1000,
+  "batch_size": 1000,
+  "timeout": 60,
+  "retry_attempts": 3,
+  "retry_delay": 1.0,
+  "validate_geometry": true,
+  "normalize_attributes": true,
+  "verbose": true
+}
+```
+
+## 🔧 Advanced Features
+
+### Data Quality & Validation
+- **Geometry Validation**: Automatically validates and fixes invalid geometries
+- **Attribute Normalization**: Converts field names to snake_case, handles special characters
+- **Error Recovery**: Retries failed requests with exponential backoff
+- **Progress Tracking**: Real-time progress updates for large datasets
+
+### Performance Optimization
+- **Intelligent Pagination**: Handles large datasets efficiently
+- **Batch Processing**: Configurable batch sizes for optimal performance
+- **Memory Management**: Streams data to avoid memory issues
+- **Rate Limiting**: Respectful delays between requests
+
+### Output Format
+All outputs are valid GeoJSON FeatureCollection with metadata:
+```json
+{
+  "type": "FeatureCollection",
+  "features": [...],
+  "metadata": {
+    "source_url": "https://services.arcgis.com/...",
+    "total_features": 1234,
+    "processed_features": 1234,
+    "scraped_at": "2024-01-15 14:30:00",
+    "config": {...}
+  }
+}
+```
+
+## 🚀 Deployment & Production
+
+### One-Command Deploy
+```bash
+# Automatically commit and push all changes
+python deploy.py
+```
+
+### Manual Git Workflow
+```bash
+git add .
+git commit -m "Add new scraper configuration"
+git push origin main
+```
+
+### Package Installation
+```bash
+# Install as a Python package
+pip install -e .
+
+# Now you can use the 'scrapington' command anywhere
+scrapington --url "https://services.arcgis.com/..." --output "data.geojson"
+```
+
+## 📊 Real-World Examples
+
+### Example 1: School Districts
+```bash
+python universal_scraper.py \
+  --url "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_School_Districts/FeatureServer/0/query" \
+  --output "school_districts.geojson" \
+  --where "STATE_NAME = 'California'" \
+  --max-records 5000
+```
+
+### Example 2: Using Configuration
+```bash
+# Create config
+python universal_scraper.py --create-config schools.json
+
+# Edit schools.json with your URL and settings
+# Then run
+python universal_scraper.py --config schools.json
+```
+
+### Example 3: Large Dataset with Custom Settings
+```bash
+python universal_scraper.py \
+  --url "https://services.arcgis.com/..." \
+  --output "large_dataset.geojson" \
+  --batch-size 500 \
+  --max-records 50000 \
+  --timeout 120
+```
+
+## 🛠️ Development & Customization
+
+### Adding Custom Transformations
+The universal scraper is designed to be extensible. You can modify the `_process_features` method to add custom data transformations.
+
+### Error Handling
+The scraper includes comprehensive error handling:
+- Network timeouts and retries
+- Invalid geometry detection and fixing
+- Malformed data handling
+- Progress tracking and recovery
+
+### Testing
+```bash
+# Run tests
+pytest
+
+# Test with sample data
+python universal_scraper.py --create-config test.json
+python universal_scraper.py --config test.json
+```
+
+## 📋 Troubleshooting
+
+### Common Issues
+1. **"Invalid URL"** - Ensure the URL ends with `/query` and is a valid ArcGIS service
+2. **"No features found"** - Check your WHERE clause and field names
+3. **"Timeout errors"** - Increase timeout or reduce batch size
+4. **"Memory issues"** - Reduce batch size or max records
+
+### Getting Help
+- Check the service URL in a browser first
+- Use `--verbose` flag for detailed logging
+- Test with small datasets first (`--max-records 100`)
+- Check the service's field names and capabilities
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Add your scraper or improvements
+4. Test thoroughly
+5. Submit a pull request
+
+## 📄 License
+
+MIT License - see LICENSE file for details.
 
 

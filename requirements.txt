@@ -1,0 +1,15 @@
+# Core dependencies for universal scraper
+requests>=2.31.0
+urllib3>=2.0.0
+
+# Optional dependencies for advanced features
+shapely>=2.0.0
+pyproj>=3.6.0
+pandas>=2.0.0
+tqdm>=4.65.0
+
+# Development and testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+black>=23.0.0
+flake8>=6.0.0
