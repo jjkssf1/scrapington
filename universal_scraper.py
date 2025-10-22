@@ -18,7 +18,7 @@ import sys
 import time
 from dataclasses import dataclass, asdict
 from typing import Any, Dict, List, Optional, Union
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs, urlencode
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -101,6 +101,25 @@ class UniversalScraper:
         if self.config.verbose:
             print(f"[{time.strftime('%H:%M:%S')}] {message}")
 
+    def _normalize_url(self, url: str) -> str:
+        """Normalize URL to ensure it has the proper query endpoint."""
+        # Remove any existing query parameters
+        base_url = url.split('?')[0]
+        
+        # If URL ends with /FeatureServer or /MapServer (no layer number), append /0/query
+        if base_url.endswith('/FeatureServer') or base_url.endswith('/MapServer'):
+            return f"{base_url}/0/query"
+        
+        # If URL ends with /FeatureServer/N or /MapServer/N (layer number), append /query
+        if ('/FeatureServer/' in base_url or '/MapServer/' in base_url) and not base_url.endswith('/query'):
+            # Check if it ends with a number (layer ID)
+            parts = base_url.rstrip('/').split('/')
+            if parts[-1].isdigit():
+                return f"{base_url}/query"
+        
+        # If it already ends with /query, return as-is
+        return base_url
+    
     def _validate_url(self, url: str) -> bool:
         """Validate that the URL is a proper ArcGIS Feature Service endpoint."""
         try:
@@ -108,9 +127,13 @@ class UniversalScraper:
             if not parsed.scheme or not parsed.netloc:
                 return False
             
-            # Check if it looks like an ArcGIS service
-            if 'arcgis.com' not in parsed.netloc and 'arcgis' not in parsed.netloc:
-                self._log("Warning: URL doesn't appear to be an ArcGIS service")
+            # Check if it looks like an ArcGIS REST service
+            # Accept domains with 'arcgis' or paths containing '/rest/services'
+            netloc_lower = parsed.netloc.lower()
+            path_lower = parsed.path.lower()
+            
+            if 'arcgis' not in netloc_lower and '/rest/services' not in path_lower:
+                self._log("Warning: URL doesn't appear to be an ArcGIS REST service")
             
             return True
         except Exception:
@@ -146,9 +169,14 @@ class UniversalScraper:
         self._log(f"Fetching batch: offset={offset}, batch_size={self.config.batch_size}")
         
         try:
+            # Build URL with proper ArcGIS-compatible encoding
+            # ArcGIS requires certain characters (=, *, <, >, etc.) to NOT be URL-encoded
+            base_url = self.config.url.split('?')[0]
+            query_string = urlencode(params, safe='=><,*')
+            full_url = f"{base_url}?{query_string}"
+            
             response = self.session.get(
-                self.config.url,
-                params=params,
+                full_url,
                 timeout=self.config.timeout
             )
             response.raise_for_status()
@@ -225,6 +253,9 @@ class UniversalScraper:
 
     def scrape(self) -> Dict[str, Any]:
         """Main scraping method that handles pagination and data collection."""
+        # Normalize the URL to ensure it has the proper query endpoint
+        self.config.url = self._normalize_url(self.config.url)
+        
         if not self._validate_url(self.config.url):
             raise ValueError(f"Invalid URL: {self.config.url}")
 
@@ -416,11 +447,11 @@ Examples:
         data = scraper.scrape()
         output_path = scraper.save(data)
         
-        print(f"\n✅ Success! Scraped {scraper.total_features} features")
-        print(f"📁 Output: {output_path}")
+        print(f"\nSuccess! Scraped {scraper.total_features} features")
+        print(f"Output: {output_path}")
         
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"Error: {e}")
         sys.exit(1)
 
 

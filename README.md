@@ -33,6 +33,17 @@ python universal_scraper.py --url "https://services.arcgis.com/..." --output "my
 scrapington --url "https://services.arcgis.com/..." --output "my_data.geojson"
 ```
 
+> **💡 Pro Tip**: You can now provide simplified URLs!
+> - Works with: `https://services.arcgis.com/.../FeatureServer` or `.../MapServer` (auto-adds `/0/query`)
+> - Works with: `https://services.arcgis.com/.../FeatureServer/0` or `.../MapServer/31` (auto-adds `/query`)
+> - Works with: `https://services.arcgis.com/.../FeatureServer/0/query` (complete URL)
+> - **New!** Supports both FeatureServer AND MapServer endpoints
+> 
+> **⚠️ Important**: Make sure your URL is valid! Check that:
+> - The service actually exists (test the URL in your browser by adding `?f=json`)
+> - Path capitalization is correct (some servers use `/ArcGIS/`, not `/arcgis/`)
+> - For custom portals, use browser DevTools Network tab to find the actual REST service URL
+
 ### 3. Advanced Usage with Configuration
 ```bash
 # Create a sample config
@@ -157,16 +168,43 @@ scrapington --url "https://services.arcgis.com/..." --output "data.geojson"
 
 ## 📊 Real-World Examples
 
-### Example 1: School Districts
+### Example 1: School Enrollment Boundaries
 ```bash
 python universal_scraper.py \
-  --url "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_School_Districts/FeatureServer/0/query" \
-  --output "school_districts.geojson" \
-  --where "STATE_NAME = 'California'" \
-  --max-records 5000
+  --url "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/ACS_School_Enrollment_Boundaries/FeatureServer/0" \
+  --output "school_boundaries.geojson" \
+  --max-records 100
 ```
 
-### Example 2: Using Configuration
+### Example 2: Public Schools
+```bash
+python universal_scraper.py \
+  --url "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/HIFLD_Public_Schools_Placekey/FeatureServer" \
+  --output "public_schools.geojson" \
+  --max-records 1000
+```
+
+### Example 3: Custom ArcGIS Server (services6.arcgis.com)
+```bash
+# Works with any ArcGIS domain!
+python universal_scraper.py \
+  --url "https://services6.arcgis.com/aROFfSNHbmHPb6wX/arcgis/rest/services/County_Commission_HUB/FeatureServer" \
+  --output "county_commission.geojson"
+```
+
+### Example 3.5: MapServer Endpoints (not just FeatureServer!)
+```bash
+# Works with MapServer too! (e.g., from custom GIS portals)
+python universal_scraper.py \
+  --url "https://web6.kcsgis.com/kcsgis/rest/services/Baldwin/Baldwin_Public_ISV/MapServer/31" \
+  --output "baldwin_parcels.geojson" \
+  --max-records 10000
+```
+
+> **💡 Discovery Tip**: Many custom mapping websites (like county parcel viewers) use ArcGIS services under the hood. 
+> Open your browser's Network tab, look for requests to `/rest/services/`, and you can often find the direct MapServer or FeatureServer URLs!
+
+### Example 4: Using Configuration
 ```bash
 # Create config
 python universal_scraper.py --create-config schools.json
@@ -176,7 +214,7 @@ python universal_scraper.py --create-config schools.json
 python universal_scraper.py --config schools.json
 ```
 
-### Example 3: Large Dataset with Custom Settings
+### Example 5: Large Dataset with Custom Settings
 ```bash
 python universal_scraper.py \
   --url "https://services.arcgis.com/..." \
@@ -198,6 +236,27 @@ The scraper includes comprehensive error handling:
 - Malformed data handling
 - Progress tracking and recovery
 
+### Recent Improvements
+- **Fixed URL Encoding**: Special characters like `=` and `*` are now properly handled for ArcGIS compatibility
+- **Windows Console Support**: Removed emoji characters that caused encoding errors on Windows
+- **Better Error Messages**: Clearer indication when services don't exist or URLs are invalid
+- **Smart URL Normalization**: Automatically adds `/0/query` to incomplete URLs
+- **Multi-Domain Support**: Works with any ArcGIS domain (`services.arcgis.com`, `services6.arcgis.com`, etc.)
+- **MapServer Support**: Now works with both FeatureServer and MapServer endpoints
+- **Custom GIS Portals**: Can scrape from custom mapping portals that use ArcGIS REST APIs
+
+### Technical Details
+The scraper uses proper URL encoding for ArcGIS services:
+- Characters like `=`, `*`, `<`, `>`, and `,` are kept unencoded
+- This prevents the `where=1=1` from becoming `where=1%3D1`
+- ArcGIS servers expect these characters in their raw form
+
+**Smart URL Handling:**
+- If you provide `https://.../FeatureServer` or `.../MapServer`, it automatically adds `/0/query`
+- If you provide `https://.../FeatureServer/5` or `.../MapServer/31`, it automatically adds `/query`
+- URLs ending with `/query` are used as-is
+- Works with both FeatureServer and MapServer endpoints
+
 ### Testing
 ```bash
 # Run tests
@@ -211,16 +270,58 @@ python universal_scraper.py --config test.json
 ## 📋 Troubleshooting
 
 ### Common Issues
-1. **"Invalid URL"** - Ensure the URL ends with `/query` and is a valid ArcGIS service
-2. **"No features found"** - Check your WHERE clause and field names
-3. **"Timeout errors"** - Increase timeout or reduce batch size
-4. **"Memory issues"** - Reduce batch size or max records
+
+#### 1. **"400 Bad Request" Errors**
+This usually means one of two things:
+
+**A. Invalid Service URL** - The service doesn't exist
+- Verify the service exists by visiting the base URL in your browser
+- Check for typos in the service name
+- Note that service names are case-sensitive
+
+**B. Path Capitalization Matters**
+- Some ArcGIS servers require `/ArcGIS/` (capital letters) not `/arcgis/`
+- Example: `https://services.arcgis.com/.../ArcGIS/rest/services/...`
+
+#### 2. **How to Find Valid Service URLs**
+If you're unsure about a service name, query the server's service directory:
+
+```bash
+# List all services on a server
+https://services.arcgis.com/YOUR_SERVER_ID/arcgis/rest/services?f=json
+
+# Or use Python to search
+python -c "import requests, json; \
+  r = requests.get('https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services?f=json'); \
+  services = [s['name'] for s in r.json().get('services', [])]; \
+  print('\n'.join(services))"
+```
+
+#### 3. **"No features found"**
+- Check your WHERE clause syntax
+- Verify field names match the service schema
+- Try with default `--where "1=1"` first
+
+#### 4. **"Timeout errors"**
+- Increase timeout: `--timeout 120`
+- Reduce batch size: `--batch-size 500`
+- Check your internet connection
+
+#### 5. **"Memory issues"**
+- Reduce batch size: `--batch-size 100`
+- Limit max records: `--max-records 10000`
+- Process data in smaller chunks
+
+#### 6. **Unicode/Emoji Errors on Windows**
+- These have been fixed in the latest version
+- Update your `universal_scraper.py` if you see emoji-related errors
 
 ### Getting Help
-- Check the service URL in a browser first
-- Use `--verbose` flag for detailed logging
-- Test with small datasets first (`--max-records 100`)
-- Check the service's field names and capabilities
+- **Verify the service exists**: Check the URL in a browser first
+- **Use verbose mode**: Add `--verbose` flag for detailed logging
+- **Start small**: Test with `--max-records 5` before downloading large datasets
+- **Check service capabilities**: Visit `SERVICE_URL?f=json` to see available fields and settings
+- **Validate your query**: Test WHERE clauses with small limits first
 
 ## 🤝 Contributing
 
