@@ -91,4 +91,5 @@ dmypy.json
 .idea/
 .vscode/
 
-
+# Output
+geojson_export/
