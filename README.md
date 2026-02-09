@@ -1,19 +1,19 @@
-# 🗺️ Scrapington
+#  Scrapington
 
 **Universal GeoJSON Scraper for ArcGIS Feature Services**
 
 A production-ready toolkit for extracting geospatial data from any ArcGIS Feature Service with just a URL. Perfect for data scientists, GIS professionals, and developers who need reliable, scalable data extraction.
 
-## ✨ Features
+## Features
 
-- **🎯 Universal**: Works with any ArcGIS Feature Service URL
-- **⚡ Production Ready**: Handles pagination, retries, and error recovery
-- **🔧 Configurable**: JSON config files or command-line options
-- **📊 Data Quality**: Automatic geometry validation and attribute normalization
-- **🚀 Easy Deploy**: One-command deployment to GitHub
-- **📦 Packaged**: Proper Python package with dependencies
+- ** Universal**: Works with any ArcGIS Feature Service URL
+- ** Production Ready**: Handles pagination, retries, and error recovery
+- ** Configurable**: JSON config files or command-line options
+- ** Data Quality**: Automatic geometry validation and attribute normalization
+- ** Easy Deploy**: One-command deployment to GitHub
+- ** Packaged**: Proper Python package with dependencies
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### 1. Clone and Setup
 ```bash
@@ -59,7 +59,7 @@ python deploy.py
 - **`geojson_export/`** - Output directory for scraped data
 - **Legacy scripts** - `extract_*.py` for reference
 
-## 🎯 Universal Scraper Usage
+##  Universal Scraper Usage
 
 ### Command Line Options
 ```bash
@@ -131,7 +131,7 @@ All outputs are valid GeoJSON FeatureCollection with metadata:
 }
 ```
 
-## 🚀 Deployment & Production
+##  Deployment & Production
 
 ### One-Command Deploy
 ```bash
@@ -155,7 +155,7 @@ pip install -e .
 scrapington --url "https://services.arcgis.com/..." --output "data.geojson"
 ```
 
-## 📊 Real-World Examples
+##  Real-World Examples
 
 ### Example 1: School Districts
 ```bash
@@ -186,7 +186,7 @@ python universal_scraper.py \
   --timeout 120
 ```
 
-## 🛠️ Development & Customization
+##  Development & Customization
 
 ### Adding Custom Transformations
 The universal scraper is designed to be extensible. You can modify the `_process_features` method to add custom data transformations.
@@ -208,7 +208,7 @@ python universal_scraper.py --create-config test.json
 python universal_scraper.py --config test.json
 ```
 
-## 📋 Troubleshooting
+##  Troubleshooting
 
 ### Common Issues
 1. **"Invalid URL"** - Ensure the URL ends with `/query` and is a valid ArcGIS service
@@ -222,7 +222,7 @@ python universal_scraper.py --config test.json
 - Test with small datasets first (`--max-records 100`)
 - Check the service's field names and capabilities
 
-## 🤝 Contributing
+##  Contributing
 
 1. Fork the repository
 2. Create a feature branch
